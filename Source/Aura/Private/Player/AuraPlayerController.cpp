@@ -4,6 +4,7 @@
 #include "Player/AuraPlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h" // 引入增强输入子系统头文件
+#include "Interaction/EnemyInterface.h"
 
 void AAuraPlayerController::BeginPlay()
 {
@@ -54,8 +55,58 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	}
 }
 
+void AAuraPlayerController::CursorTrace()
+{
+	FHitResult CursorHit;
+	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+	
+	if (!CursorHit.bBlockingHit)
+	{
+		return;
+	}
+	
+	LastActor = ThisActor;
+	ThisActor = CursorHit.GetActor();
+	
+	if (LastActor == nullptr)
+	{
+		if (ThisActor != nullptr)
+		{
+			ThisActor->HighlightActor();
+		}
+	}
+	else
+	{
+		if (ThisActor == nullptr)
+		{
+			LastActor->UnHighlightActor();
+		}
+		else
+		{
+			if (LastActor != ThisActor)
+			{
+				LastActor->UnHighlightActor();
+				ThisActor->HighlightActor();
+			}
+			else
+			{
+				// do nothing
+			}
+		}
+	}
+	
+	
+}
+
 AAuraPlayerController::AAuraPlayerController()
 {
 	//多人游戏中controller在一个服务器改变的话会同步到其他服务器（客户端）中，让controller可复制
 	bReplicates = true;
+}
+
+void AAuraPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	
+	CursorTrace();
 }
